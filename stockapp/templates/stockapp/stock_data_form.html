@@ -1,0 +1,12 @@
+<!-- stockapp/templates/stockapp/stock_data_form.html -->
+
+{% extends 'stock_data.html' %}
+{% block content %}
+  <h2>{% if form.instance.pk %}Edit{% else %}Add{% endif %} Stock Data</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save</button>
+  </form>
+  <a href="{% url 'stock_data_list' %}">Cancel</a>
+{% endblock %}

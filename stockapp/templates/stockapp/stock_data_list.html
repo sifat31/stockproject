@@ -1,0 +1,39 @@
+<!-- stockapp/templates/stockapp/stock_data_list.html -->
+{% extends 'stock_data.html' %}
+
+{% block content %}
+
+  <h2>Stock Data List</h2>
+  
+  <a href="{% url 'stock_data_create' %}" class="button">Add New Stock Data</a>
+  
+  <table>
+    <tr>
+      <th>Date</th>
+      <th>Trade Code</th>
+      <th>High</th>
+      <th>Low</th>
+      <th>Open</th>
+      <th>Close</th>
+      <th>Volume</th>
+      <th>Actions</th> <!-- Add this column for actions -->
+    </tr>
+    {% for entry in stock_data %}
+      <tr>
+        <td>{{ entry.date }}</td>
+        <td>{{ entry.trade_code }}</td>
+        <td>{{ entry.high }}</td>
+        <td>{{ entry.low }}</td>
+        <td>{{ entry.open }}</td>
+        <td>{{ entry.close }}</td>
+        <td>{{ entry.volume }}</td>
+        <td>
+          <a href="{% url 'stock_data_update' id=entry.id %}" class="button">Edit</a>
+          <a href="{% url 'stock_data_delete' id=entry.id %}" class="button">Delete</a>
+        </td>
+      </tr>
+    {% endfor %}
+  </table>
+  
+  
+{% endblock %}

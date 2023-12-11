@@ -1,0 +1,379 @@
+<!-- stockapp/templates/stockapp/stock_data_viz.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Data Visualization</title>
+    <!-- Include D3.js library -->
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <style>
+        /* Add some styling for better visualization */
+        .bar {
+            fill: steelblue;
+        }
+    </style>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-red">
+        <a class="navbar-brand" href="/">StockApp</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'stock_data_list' %}">New Stock Data</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'stock_data_viz' %}">Stock Data Visualization</a>
+                </li>
+
+                <!-- Add more navigation items as needed -->
+            </ul>
+        </div>
+    </nav>
+
+    <h1 style="text-align-last: center;background: #F5F5DC;">Stock Data Visualization</h1>
+
+    <!-- Container for the D3.js volume chart -->
+    <div id="chart-container-volume"></div>
+
+    <!-- Container for the D3.js high chart -->
+    <div id="chart-container-high"></div>
+
+    <!-- Container for the D3.js low chart -->
+    <div id="chart-container-low"></div>
+
+    <!-- Container for the D3.js open chart -->
+    <div id="chart-container-open"></div>
+
+    <!-- Container for the D3.js close chart -->
+    <div id="chart-container-close"></div>
+
+
+    <script>
+        // Access data passed from the Django view
+        var data = {{ data_for_d3| safe }};
+        console.log("Number of Data Points:", data.length);
+
+        // Sort data by date
+        data.sort(function (a, b) {
+            return d3.ascending(a.date, b.date);
+        });
+
+        // Combine data for the same date by summing their volumes
+        var aggregatedDataVolume = d3.rollup(
+            data,
+            v => d3.sum(v, d => d.volume),
+            d => d.date
+        );
+
+        // Convert aggregatedDataVolume back to an array of objects
+        var aggregatedArrayVolume = Array.from(aggregatedDataVolume, ([date, volume]) => ({ date, volume }));
+
+        // Combine data for the same date by summing their highs
+        var aggregatedDataHigh = d3.rollup(
+            data,
+            v => d3.sum(v, d => d.high),
+            d => d.date
+        );
+
+        // Convert aggregatedDataHigh back to an array of objects
+        var aggregatedArrayHigh = Array.from(aggregatedDataHigh, ([date, high]) => ({ date, high }));
+
+        // Combine data for the same date by summing their lows
+        var aggregatedDataLow = d3.rollup(
+            data,
+            v => d3.sum(v, d => d.low),
+            d => d.date
+        );
+
+        // Convert aggregatedDataLow back to an array of objects
+        var aggregatedArrayLow = Array.from(aggregatedDataLow, ([date, low]) => ({ date, low }));
+        // Combine data for the same date by summing their opens
+        var aggregatedDataOpen = d3.rollup(
+            data,
+            v => d3.sum(v, d => d.open),
+            d => d.date
+        );
+
+        // Convert aggregatedDataOpen back to an array of objects
+        var aggregatedArrayOpen = Array.from(aggregatedDataOpen, ([date, open]) => ({ date, open }));
+
+        // Combine data for the same date by summing their closes
+        var aggregatedDataClose = d3.rollup(
+            data,
+            v => d3.sum(v, d => d.close),
+            d => d.date
+        );
+
+        // Convert aggregatedDataClose back to an array of objects
+        var aggregatedArrayClose = Array.from(aggregatedDataClose, ([date, close]) => ({ date, close }));
+
+        // Set up the chart dimensions
+        var margin = { top: 60, right: 1, bottom: 70, left: 400 },
+            width = 1200 - margin.left - margin.right,
+            height = 500 - margin.top - margin.bottom;
+
+        // Create the SVG container for volume chart
+        var svgVolume = d3.selectAll("#chart-container-volume")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        // Create the SVG container for high chart
+        var svgHigh = d3.selectAll("#chart-container-high")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        // Create the SVG container for low chart
+        var svgLow = d3.selectAll("#chart-container-low")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        // Create the SVG container for open chart
+        var svgOpen = d3.selectAll("#chart-container-open")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        // Create the SVG container for close chart
+        var svgClose = d3.selectAll("#chart-container-close")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        // Create scales for all three charts
+        var xVolume = d3.scaleBand()
+            .range([0, width])
+            .padding(0.1)
+            .domain(aggregatedArrayVolume.map(function (d) { return d.date; }));
+
+        var xHigh = d3.scaleBand()
+            .range([0, width])
+            .padding(0.1)
+            .domain(aggregatedArrayHigh.map(function (d) { return d.date; }));
+
+        var xLow = d3.scaleBand()
+            .range([0, width])
+            .padding(0.1)
+            .domain(aggregatedArrayLow.map(function (d) { return d.date; }));
+
+        var yVolume = d3.scaleLinear()
+            .range([height, 0])
+            .domain([0, d3.max(aggregatedArrayVolume, function (d) { return d.volume; })]).nice();
+
+        var yHigh = d3.scaleLinear()
+            .range([height, 0])
+            .domain([0, d3.max(aggregatedArrayHigh, function (d) { return d.high; })]).nice();
+
+        var yLow = d3.scaleLinear()
+            .range([height, 0])
+            .domain([0, d3.max(aggregatedArrayLow, function (d) { return d.low; })]).nice();
+        var xOpen = d3.scaleBand()
+            .range([0, width])
+            .padding(0.1)
+            .domain(aggregatedArrayOpen.map(function (d) { return d.date; }));
+
+        var xClose = d3.scaleBand()
+            .range([0, width])
+            .padding(0.1)
+            .domain(aggregatedArrayClose.map(function (d) { return d.date; }));
+
+        var yOpen = d3.scaleLinear()
+            .range([height, 0])
+            .domain([0, d3.max(aggregatedArrayOpen, function (d) { return d.open; })]).nice();
+
+        var yClose = d3.scaleLinear()
+            .range([height, 0])
+            .domain([0, d3.max(aggregatedArrayClose, function (d) { return d.close; })]).nice();
+
+
+        // Create bars for volume chart using aggregated data
+        svgVolume.selectAll(".bar")
+            .data(aggregatedArrayVolume)
+            .enter().append("rect")
+            .attr("class", "bar")
+            .attr("x", function (d) { return xVolume(d.date); })
+            .attr("width", xVolume.bandwidth())
+            .attr("y", function (d) { return yVolume(d.volume); })
+            .attr("height", function (d) { return height - yVolume(d.volume); })
+            .style("fill", "steelblue"); // Bar color
+
+        // Create x-axis for volume chart
+        svgVolume.append("g")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(xVolume))
+            .selectAll("text")
+            .style("text-anchor", "end")
+            .attr("dx", "-.8em")
+            .attr("dy", ".15em")
+            .attr("transform", "rotate(-45)");
+
+        // Create y-axis for volume chart
+        svgVolume.append("g")
+            .call(d3.axisLeft(yVolume));
+
+        // Add title for volume chart
+        svgVolume.append("text")
+            .attr("x", width / 2)
+            .attr("y", -margin.top / 2)
+            .attr("text-anchor", "middle")
+            .style("font-size", "24px")
+            .text("Cumulative Volume Per Day");
+
+        // Create bars for high chart using aggregated data
+        svgHigh.selectAll(".bar")
+            .data(aggregatedArrayHigh)
+            .enter().append("rect")
+            .attr("class", "bar")
+            .attr("x", function (d) { return xHigh(d.date); })
+            .attr("width", xHigh.bandwidth())
+            .attr("y", function (d) { return yHigh(d.high); })
+            .attr("height", function (d) { return height - yHigh(d.high); })
+            .style("fill", "orange"); // Bar color
+
+        // Create x-axis for high chart
+        svgHigh.append("g")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(xHigh))
+            .selectAll("text")
+            .style("text-anchor", "end")
+            .attr("dx", "-.8em")
+            .attr("dy", ".15em")
+            .attr("transform", "rotate(-45)");
+
+        // Create y-axis for high chart
+        svgHigh.append("g")
+            .call(d3.axisLeft(yHigh));
+
+        // Add title for high chart
+        svgHigh.append("text")
+            .attr("x", width / 2)
+            .attr("y", -margin.top / 2)
+            .attr("text-anchor", "middle")
+            .style("font-size", "24px")
+            .text("Cumulative High Per Day");
+
+        // Create bars for low chart using aggregated data
+        svgLow.selectAll(".bar")
+            .data(aggregatedArrayLow)
+            .enter().append("rect")
+            .attr("class", "bar")
+            .attr("x", function (d) { return xLow(d.date); })
+            .attr("width", xLow.bandwidth())
+            .attr("y", function (d) { return yLow(d.low); })
+            .attr("height", function (d) { return height - yLow(d.low); })
+            .style("fill", "green"); // Bar color for low chart
+
+        // Create x-axis for low chart
+        svgLow.append("g")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(xLow))
+            .selectAll("text")
+            .style("text-anchor", "end")
+            .attr("dx", "-.8em")
+            .attr("dy", ".15em")
+            .attr("transform", "rotate(-45)");
+
+        // Create y-axis for low chart
+        svgLow.append("g")
+            .call(d3.axisLeft(yLow));
+
+        // Add title for low chart
+        svgLow.append("text")
+            .attr("x", width / 2)
+            .attr("y", -margin.top / 2)
+            .attr("text-anchor", "middle")
+            .style("font-size", "24px")
+            .text("Cumulative Low Per Day");
+        // Create bars for open chart using aggregated data
+        svgOpen.selectAll(".bar")
+            .data(aggregatedArrayOpen)
+            .enter().append("rect")
+            .attr("class", "bar")
+            .attr("x", function (d) { return xOpen(d.date); })
+            .attr("width", xOpen.bandwidth())
+            .attr("y", function (d) { return yOpen(d.open); })
+            .attr("height", function (d) { return height - yOpen(d.open); })
+            .style("fill", "red"); // Bar color for open chart
+
+        // Create x-axis for open chart
+        svgOpen.append("g")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(xOpen))
+            .selectAll("text")
+            .style("text-anchor", "end")
+            .attr("dx", "-.8em")
+            .attr("dy", ".15em")
+            .attr("transform", "rotate(-45)");
+
+        // Create y-axis for open chart
+        svgOpen.append("g")
+            .call(d3.axisLeft(yOpen));
+
+        // Add title for open chart
+        svgOpen.append("text")
+            .attr("x", width / 2)
+            .attr("y", -margin.top / 2)
+            .attr("text-anchor", "middle")
+            .style("font-size", "24px")
+            .text("Cumulative Open Per Day");
+
+        // Create bars for close chart using aggregated data
+        svgClose.selectAll(".bar")
+            .data(aggregatedArrayClose)
+            .enter().append("rect")
+            .attr("class", "bar")
+            .attr("x", function (d) { return xClose(d.date); })
+            .attr("width", xClose.bandwidth())
+            .attr("y", function (d) { return yClose(d.close); })
+            .attr("height", function (d) { return height - yClose(d.close); })
+            .style("fill", "purple"); // Bar color for close chart
+
+        // Create x-axis for close chart
+        svgClose.append("g")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(xClose))
+            .selectAll("text")
+            .style("text-anchor", "end")
+            .attr("dx", "-.8em")
+            .attr("dy", ".15em")
+            .attr("transform", "rotate(-45)");
+
+        // Create y-axis for close chart
+        svgClose.append("g")
+            .call(d3.axisLeft(yClose));
+
+        // Add title for close chart
+        svgClose.append("text")
+            .attr("x", width / 2)
+            .attr("y", -margin.top / 2)
+            .attr("text-anchor", "middle")
+            .style("font-size", "24px")
+            .text("Cumulative Close Per Day");
+
+
+    </script>
+</body>
+
+</html>
